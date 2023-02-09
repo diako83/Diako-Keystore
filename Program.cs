@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Diako_keystore.Model;
 
 namespace Diako_keystore
@@ -15,7 +11,7 @@ namespace Diako_keystore
       NormalPriceReceipt normalPriceReceipt = calculateSumOfNonCampaignPrice(shoppingCart, campaignEANs);
 
       PrintReceipt(campaignReceipt, normalPriceReceipt);
-
+      Console.ReadLine();
     }
 
     static List<long> campaignEANs = new List<long>()
@@ -193,9 +189,6 @@ namespace Diako_keystore
       }
       Console.WriteLine("\n  Campaign price after discount " + receipt.NormalPriceReceipt.Price + " Kr");
       Console.WriteLine("\n Total price: " + receipt.TotalPrice + " Kr");
-
-
-      Console.ReadLine();
 
 
     }
