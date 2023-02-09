@@ -11,10 +11,10 @@ namespace Diako_keystore
     static void Main(string[] args)
     {
 
-      Console.WriteLine(CalculateDiscount(shoppingCart, campaignEANs, 30));
+      CampaignReceipt campaignReceipt = CalculateDiscount(shoppingCart, campaignEANs, 30);
+      NormalPriceReceipt normalPriceReceipt = calculateSumOfNonCampaignPrice(shoppingCart, campaignEANs);
 
-      Console.ReadLine();
-
+      PrintReceipt(campaignReceipt, normalPriceReceipt);
 
     }
 
@@ -27,7 +27,6 @@ namespace Diako_keystore
             7310532109090,
             7611612222105
             };
-
 
 
     static List<Product> shoppingCart = new List<Product>()
@@ -85,10 +84,10 @@ namespace Diako_keystore
 
 
 
-    static double CalculateDiscount(List<Product> shoppingCart, List<long> campaignEANs, int campaingPrice)
+    static CampaignReceipt CalculateDiscount(List<Product> shoppingCart, List<long> campaignEANs, int campaignPrice)
     {
 
-      //Filterea och skapa en lista av alla producter som har EAN som är med i kampanj
+      //skapa en lista av alla producter som har EAN som är med i kampanj
       List<Product> itemLists = (from product in shoppingCart
                                  join ean in campaignEANs on product.EAN equals ean
                                  select product)
@@ -99,18 +98,23 @@ namespace Diako_keystore
       {
         // om de är ett jämt tal. dividerar med 2 -> returnera reultatat gånger kampanjpriset
         //plus resterande varor som ej med i Kampanjen
+        int nrOfDiscountProducts = (itemLists.Count / 2);
 
+        double price = nrOfDiscountProducts * campaignPrice;
 
-        int nrOfDicountProducts = (itemLists.Count / 2);
-        return (nrOfDicountProducts * campaingPrice) + calculatSumOfNonCampaignPrice(shoppingCart, campaignEANs);
+        return new CampaignReceipt()
+        {
 
+          shoppingCart = itemLists,
+          Price = price
+        };
       }
       else
       {
 
 
         int nrOfDicountProducts = (itemLists.Count / 2);
-        double discountPrice = nrOfDicountProducts * campaingPrice;
+        double discountPrice = nrOfDicountProducts * campaignPrice;
 
         //plocka ut sista producten som gav en udda siffra och ej har kampanjpris
         //i och med List börjar från index 0 måste itemLists.Count minskas med 1
@@ -120,14 +124,20 @@ namespace Diako_keystore
         // och var ej giltig för kampanjpris plus resterande varor som ej med i Kampanjen
 
 
-        return (discountPrice + nonDicountProduct.Price) + calculatSumOfNonCampaignPrice(shoppingCart, campaignEANs);
+        double price = discountPrice + nonDicountProduct.Price;
+
+        return new CampaignReceipt()
+        {
+          shoppingCart = itemLists,
+          Price = price
+        };
 
       }
 
     }
 
 
-    static double calculatSumOfNonCampaignPrice(List<Product> shoppingCart, List<long> campaignEANs)
+    static NormalPriceReceipt calculateSumOfNonCampaignPrice(List<Product> shoppingCart, List<long> campaignEANs)
     {
       // filterar bort alla producter som har EAN tillhörande kampanjpris
       List<Product> itemList = (from product in shoppingCart
@@ -142,9 +152,52 @@ namespace Diako_keystore
 
 
       // returnera summan av alla varor som inte är med i kampanj
-      return itemList.Sum(prod => prod.Price);
+      double price = itemList.Sum(prod => prod.Price);
+
+      return new NormalPriceReceipt()
+      {
+        shoppingCart = itemList,
+        Price = price
+      };
 
     }
 
+    static void PrintReceipt(CampaignReceipt campaignReceipt, NormalPriceReceipt normalPriceReceipt)
+    {
+
+      Receipt receipt = new Receipt()
+      {
+        date = DateTime.Now,
+        CampaignReceipt = campaignReceipt,
+        NormalPriceReceipt = normalPriceReceipt,
+        TotalPrice = campaignReceipt.Price + normalPriceReceipt.Price
+      };
+
+
+      Console.WriteLine("\n     KeyStore receipt    ");
+      Console.WriteLine("     " + receipt.date + "\n");
+      Console.WriteLine("Campaign items \n");
+
+
+      foreach (Product item in receipt.CampaignReceipt.shoppingCart)
+      {
+        Console.WriteLine("Name: " + item.Name + " EAN: " + item.EAN + " Price: " + item.Price);
+      }
+      Console.WriteLine("\n Campaign price after discount " + receipt.CampaignReceipt.Price + " Kr");
+      Console.WriteLine("-----------------");
+
+      Console.WriteLine("\n Regular price products");
+      foreach (Product item in receipt.NormalPriceReceipt.shoppingCart)
+      {
+        Console.WriteLine("Name: " + item.Name + " EAN: " + item.EAN + " Price: " + item.Price);
+      }
+      Console.WriteLine("\n  Campaign price after discount " + receipt.NormalPriceReceipt.Price + " Kr");
+      Console.WriteLine("\n Total price: " + receipt.TotalPrice + " Kr");
+
+
+      Console.ReadLine();
+
+
+    }
   }
 }
